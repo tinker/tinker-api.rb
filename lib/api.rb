@@ -1,7 +1,6 @@
 require 'sinatra/base'
 require 'rack/cors'
 require 'mongo'
-require 'base64'
 
 BASE62 = (('0'..'9').to_a + ('a'..'z').to_a + ('A'..'Z').to_a)
 DB = Mongo::Connection.new['tinker']
