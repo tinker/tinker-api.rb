@@ -16,7 +16,7 @@ module Tinker
     end
 
     post '/tinkers' do
-      data = params['tinker']
+      data = params
       hash = 5.times.map { BASE62.sample }.join
       tinker = {
         :meta => {
@@ -26,19 +26,19 @@ module Tinker
         :code => {
           :markup => {
             :type => :html,
-            :body => Base64.decode64(data[:code][:markup][:body] || '')
+            :body => data[:code][:markup][:body] || ''
           },
           :style => {
             :type => :css,
-            :body => Base64.decode64(data[:code][:style][:body] || '')
+            :body => data[:code][:style][:body] || ''
           },
           :behaviour => {
             :type => :js,
-            :body => Base64.decode64(data[:code][:behaviour][:body] || '')
+            :body => data[:code][:behaviour][:body] || ''
           }
         }
       }
-      id = DB['tinker'].insert(tinker)
+      DB['tinker'].insert(tinker)
       tinker.to_json
     end
 
