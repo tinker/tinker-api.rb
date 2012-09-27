@@ -59,6 +59,7 @@ module Tinker
         'meta.revision' => revision.to_i
       })
       if tinker
+        tinker.delete '_id'
         tinker.to_json
       else
         status 404
