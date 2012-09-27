@@ -1,6 +1,7 @@
 require 'sinatra/base'
 require 'rack/cors'
 require 'mongo'
+require 'json'
 
 BASE62 = (('0'..'9').to_a + ('a'..'z').to_a + ('A'..'Z').to_a)
 DB = Mongo::Connection.new['tinker']
@@ -15,26 +16,36 @@ module Tinker
     end
 
     post '/tinkers' do
-      data = params
+      data = JSON.parse request.body.read
       hash = 5.times.map { BASE62.sample }.join
-      tinker = {
-        :meta => {
-          :hash => hash,
-          :revision => 0
+      tinker = {}
+      tinker[:meta] = {
+        :hash => hash,
+        :revision => 0
+      }
+      if data['dependencies'].is_a? Array
+        deps = []
+        data['dependencies'].each do |dep|
+          if dep.is_a? String
+            deps << dep
+          end
+        end
+        if deps.length > 0
+          tinker[:dependencies] = deps
+        end
+      end
+      tinker[:code] = {
+        :markup => {
+          :type => :html,
+          :body => data['code']['markup']['body'] || ''
         },
-        :code => {
-          :markup => {
-            :type => :html,
-            :body => data[:code][:markup][:body] || ''
-          },
-          :style => {
-            :type => :css,
-            :body => data[:code][:style][:body] || ''
-          },
-          :behaviour => {
-            :type => :js,
-            :body => data[:code][:behaviour][:body] || ''
-          }
+        :style => {
+          :type => :css,
+          :body => data['code']['style']['body'] || ''
+        },
+        :behaviour => {
+          :type => :js,
+          :body => data['code']['behaviour']['body'] || ''
         }
       }
       DB['tinker'].insert(tinker)
