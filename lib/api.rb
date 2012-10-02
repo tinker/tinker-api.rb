@@ -12,7 +12,7 @@ module Tinker
     use Rack::Cors do
       allow do
         origins '*'
-        resource '*', :headers => :any, :methods => [:get, :post, :options]
+        resource '*', :headers => :any, :methods => [:get, :post, :put, :options]
       end
     end
 
@@ -44,6 +44,17 @@ module Tinker
       else
         status 404
         {:error => "No tinker found with that hash and/or revision"}.to_json
+      end
+    end
+
+    put %r{^/tinkers/([A-Za-z0-9]{5})?$} do |hash|
+      data = JSON.parse request.body.read
+      tinker = Tinker.new data
+      if tinker.store
+        tinker.to_json
+      else
+        status 502
+        {:error => 'Something went wrong while storing the tinker'}.to_json
       end
     end
   end
