@@ -2,6 +2,7 @@ require 'sinatra/base'
 require 'rack/cors'
 require 'mongo'
 require 'json'
+require 'tinker'
 
 BASE62 = (('0'..'9').to_a + ('a'..'z').to_a + ('A'..'Z').to_a)
 DB = Mongo::Connection.new['tinker']
@@ -17,39 +18,18 @@ module Tinker
 
     post '/tinkers' do
       data = JSON.parse request.body.read
-      hash = 5.times.map { BASE62.sample }.join
-      tinker = {}
-      tinker[:meta] = {
-        :hash => hash,
-        :revision => 0
-      }
-      if data['dependencies'].is_a? Array
-        deps = []
-        data['dependencies'].each do |dep|
-          if dep.is_a? String
-            deps << dep
-          end
-        end
-        if deps.length > 0
-          tinker[:dependencies] = deps
-        end
+      if data['code'].class != Hash
+        status 403
+        {:error => 'No code found'}.to_json
       end
-      tinker[:code] = {
-        :markup => {
-          :type => :html,
-          :body => data['code']['markup']['body'] || ''
-        },
-        :style => {
-          :type => :css,
-          :body => data['code']['style']['body'] || ''
-        },
-        :behaviour => {
-          :type => :js,
-          :body => data['code']['behaviour']['body'] || ''
-        }
-      }
-      DB['tinker'].insert(tinker)
-      tinker.to_json
+
+      tinker = Tinker.new data
+      if tinker.store
+        tinker.to_json
+      else
+        status 502
+        {:error => 'Something went wrong while storing the tinker'}.to_json
+      end
     end
 
     get %r{^/tinkers/([A-Za-z0-9]{5})(?:/([0-9]+))?$} do |hash, revision|
